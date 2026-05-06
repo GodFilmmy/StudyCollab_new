@@ -114,6 +114,168 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _showMembers(BuildContext context, StudySession? session) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (_, scrollCtrl) => Column(
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Members',
+                    style: Theme.of(context).textTheme.displaySmall,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${session?.joined ?? 0}',
+                      style: const TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close, size: 20),
+                    color: AppColors.hint,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.border),
+            // Member list
+            Expanded(
+              child: _buildMemberList(context, session, scrollCtrl),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberList(
+      BuildContext context, StudySession? session, ScrollController ctrl) {
+    final tt = Theme.of(context).textTheme;
+
+    // Use real members if available, otherwise fall back to mock entries
+    final members = (session?.members.isNotEmpty == true)
+        ? session!.members
+        : _mockMembersFor(session);
+
+    if (members.isEmpty) {
+      return Center(
+        child: Text('No member info available',
+            style: tt.bodyMedium?.copyWith(color: AppColors.hint)),
+      );
+    }
+
+    return ListView.separated(
+      controller: ctrl,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: members.length,
+      separatorBuilder: (_, __) =>
+          const Divider(height: 1, indent: 72, color: AppColors.border),
+      itemBuilder: (_, i) {
+        final m = members[i];
+        final initial =
+            m.name.isNotEmpty ? m.name[0].toUpperCase() : '?';
+        return ListTile(
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/user/${m.id}');
+          },
+          leading: CircleAvatar(
+            radius: 22,
+            backgroundColor: AppColors.secondary,
+            backgroundImage:
+                m.avatar.isNotEmpty ? NetworkImage(m.avatar) : null,
+            child: m.avatar.isEmpty
+                ? Text(initial,
+                    style: const TextStyle(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15))
+                : null,
+          ),
+          title: Row(
+            children: [
+              Text(m.name,
+                  style: tt.labelLarge
+                      ?.copyWith(fontWeight: FontWeight.w500)),
+              if (m.isHost) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('Host',
+                      style: TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ],
+          ),
+          trailing: m.isHost
+              ? null
+              : const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.hint, size: 20),
+        );
+      },
+    );
+  }
+
+  // Generates stand-in members from seeded chat messages when the session
+  // has no members list populated.
+  List<Member> _mockMembersFor(StudySession? session) {
+    final seen = <String>{};
+    return _messages
+        .where((m) => seen.add(m.senderId))
+        .map((m) => Member(
+              id: m.senderId,
+              name: m.senderName,
+              avatar: m.senderAvatar,
+              isHost: m.senderId == (session?.hostId ?? ''),
+            ))
+        .toList();
+  }
+
   /// Interleave date separators between messages from different days.
   List<dynamic> _buildItems() {
     final sorted = [..._messages]
@@ -167,6 +329,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     ?.copyWith(color: AppColors.hint)),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline_rounded),
+            tooltip: 'Members',
+            onPressed: () => _showMembers(context, session),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -246,19 +415,22 @@ class _ChatBubble extends StatelessWidget {
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.secondary,
-              backgroundImage: message.senderAvatar.isNotEmpty
-                  ? NetworkImage(message.senderAvatar)
-                  : null,
-              child: message.senderAvatar.isEmpty
-                  ? Text(initial,
-                      style: const TextStyle(
-                          color: AppColors.accent,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600))
-                  : null,
+            GestureDetector(
+              onTap: () => context.push('/user/${message.senderId}'),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColors.secondary,
+                backgroundImage: message.senderAvatar.isNotEmpty
+                    ? NetworkImage(message.senderAvatar)
+                    : null,
+                child: message.senderAvatar.isEmpty
+                    ? Text(initial,
+                        style: const TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600))
+                    : null,
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -316,11 +488,82 @@ class _InputBar extends StatelessWidget {
   final VoidCallback onSend;
   const _InputBar({required this.controller, required this.onSend});
 
+  void _showAttachOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                      color: AppColors.secondary, shape: BoxShape.circle),
+                  child: const Icon(Icons.image_outlined,
+                      color: AppColors.accent),
+                ),
+                title: const Text('Send Image'),
+                subtitle: const Text('Share a photo from your gallery'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Image picker coming soon'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                      color: AppColors.secondary, shape: BoxShape.circle),
+                  child: const Icon(Icons.attach_file_rounded,
+                      color: AppColors.accent),
+                ),
+                title: const Text('Send File'),
+                subtitle: const Text('Share a document or PDF'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('File picker coming soon'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        left: 16,
+        left: 8,
         right: 8,
         top: 8,
         bottom: MediaQuery.of(context).padding.bottom + 8,
@@ -331,6 +574,21 @@ class _InputBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Attachment + button
+          GestureDetector(
+            onTap: () => _showAttachOptions(context),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppColors.secondary,
+                shape: BoxShape.circle,
+              ),
+              child:
+                  const Icon(Icons.add, color: AppColors.accent, size: 20),
+            ),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: controller,

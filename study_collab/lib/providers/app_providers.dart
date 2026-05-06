@@ -85,8 +85,10 @@ class NotificationsProvider extends ChangeNotifier {
 class MessagingProvider extends ChangeNotifier {
   final Map<String, List<ChatMessage>> _messages = {};
   final List<DmConversation> _convos = [];
+  final List<GroupConversation> _groupConvos = [];
 
   List<DmConversation> get conversations => List.unmodifiable(_convos);
+  List<GroupConversation> get groupConversations => List.unmodifiable(_groupConvos);
   List<ChatMessage> getMessages(String userId) =>
       List.unmodifiable(_messages[userId] ?? []);
 
@@ -153,6 +155,36 @@ class MessagingProvider extends ChangeNotifier {
       _convos[idx] = _convos[idx].copyWith(unreadCount: 0);
       notifyListeners();
     }
+  }
+
+  void seedGroups() {
+    if (_groupConvos.isNotEmpty) return;
+    final now = DateTime.now();
+    _groupConvos.addAll([
+      GroupConversation(
+        sessionId: 'mock-4',
+        sessionTitle: 'Organic Chemistry Review',
+        subject: 'Chemistry',
+        subjectColor: const Color(0xFF27AE60),
+        lastMessage: 'Anyone bringing extra notes tomorrow?',
+        lastSenderName: 'Sara Müller',
+        lastMessageTime: now.subtract(const Duration(hours: 1)),
+        unreadCount: 3,
+        memberCount: 7,
+      ),
+      GroupConversation(
+        sessionId: 'mock-6',
+        sessionTitle: 'Microeconomics Problem Set',
+        subject: 'Economics',
+        subjectColor: const Color(0xFF16A085),
+        lastMessage: 'Session starts in 30 minutes!',
+        lastSenderName: 'You',
+        lastMessageTime: now.subtract(const Duration(minutes: 30)),
+        unreadCount: 0,
+        memberCount: 2,
+      ),
+    ]);
+    notifyListeners();
   }
 }
 

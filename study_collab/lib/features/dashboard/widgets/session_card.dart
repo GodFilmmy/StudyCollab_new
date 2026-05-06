@@ -57,22 +57,30 @@ class SessionCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                // Host row
+                // Host row — avatar + name navigate to host profile
                 Row(
                   children: [
-                    _HostAvatar(
-                      name: session.hostName,
-                      avatarUrl: session.hostAvatar,
-                      color: session.subjectColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        session.hostName,
-                        style: tt.bodyMedium,
-                        overflow: TextOverflow.ellipsis,
+                    GestureDetector(
+                      onTap: () => context.push('/user/${session.hostId}'),
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _HostAvatar(
+                            name: session.hostName,
+                            avatarUrl: session.hostAvatar,
+                            color: session.subjectColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            session.hostName,
+                            style: tt.bodyMedium,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
+                    const Spacer(),
                     Text(
                       _formatDate(session.date, session.startTime),
                       style: tt.labelSmall?.copyWith(color: AppColors.hint),

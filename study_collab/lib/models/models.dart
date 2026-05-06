@@ -103,3 +103,38 @@ class DmConversation {
         unreadCount: unreadCount ?? this.unreadCount,
       );
 }
+
+class GroupConversation {
+  final String sessionId;
+  final String sessionTitle;
+  final String subject;
+  final Color subjectColor;
+  final String lastMessage;
+  final String lastSenderName;
+  final DateTime lastMessageTime;
+  final int unreadCount;
+  final int memberCount;
+  const GroupConversation({
+    required this.sessionId,
+    required this.sessionTitle,
+    required this.subject,
+    required this.subjectColor,
+    required this.lastMessage,
+    required this.lastSenderName,
+    required this.lastMessageTime,
+    this.unreadCount = 0,
+    required this.memberCount,
+  });
+  GroupConversation copyWith({
+    String? lastMessage, String? lastSenderName,
+    DateTime? lastMessageTime, int? unreadCount,
+  }) => GroupConversation(
+    sessionId: sessionId, sessionTitle: sessionTitle,
+    subject: subject, subjectColor: subjectColor,
+    lastMessage: lastMessage ?? this.lastMessage,
+    lastSenderName: lastSenderName ?? this.lastSenderName,
+    lastMessageTime: lastMessageTime ?? this.lastMessageTime,
+    unreadCount: unreadCount ?? this.unreadCount,
+    memberCount: memberCount,
+  );
+}
