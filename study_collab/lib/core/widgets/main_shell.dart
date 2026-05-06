@@ -102,7 +102,7 @@ class _NavItem extends StatelessWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
               decoration: BoxDecoration(
                 color: active ? AppColors.secondary : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
@@ -113,7 +113,6 @@ class _NavItem extends StatelessWidget {
                 size: 22,
               ),
             ),
-            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
