@@ -17,7 +17,7 @@ abstract final class AppColors {
   // ── Neutrals ─────────────────────────────────────────────────────────────
   static const border = Color(0xFFD4D4D4); // Border Frame
   static const hint = Color(0xFF888888); // Hint Frame
-  static const disabled = Color(0xFFB0C7E8); // Disabled Frame
+  static const disabled = Color(0xFFDED8F7); // Disabled Frame
   static const text = Color(0xFF1A1A2E);
 
   // ── Semantic ─────────────────────────────────────────────────────────────
