@@ -26,14 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  bool _isUniversityEmail(String email) {
-    if (!email.contains('@')) return false;
-    final domain = email.split('@').last.toLowerCase();
-    return domain.endsWith('.edu') ||
-        domain.endsWith('.ac.th') ||
-        domain.contains('.ac.') ||
-        domain.contains('.edu.');
-  }
+  bool _isValidEmail(String email) =>
+      email.contains('@') && email.contains('.');
 
   bool get _canSubmit =>
       _emailCtrl.text.trim().isNotEmpty && _passwordCtrl.text.isNotEmpty;
@@ -108,16 +102,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
                   decoration: const InputDecoration(
-                    labelText: 'University Email',
-                    hintText: 'you@university.ac.th',
+                    labelText: 'Email',
+                    hintText: 'you@example.com',
                     prefixIcon: Icon(Icons.email_outlined, size: 20),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty)
                       return 'Email is required';
-                    if (!_isUniversityEmail(v.trim())) {
-                      return 'Please use your university email (.edu or .ac.th)';
-                    }
+                    if (!_isValidEmail(v.trim())) return 'Enter a valid email';
                     return null;
                   },
                 ),

@@ -20,8 +20,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  final _universityCtrl = TextEditingController();
-  final _majorCtrl = TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -34,19 +32,11 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
-    _universityCtrl.dispose();
-    _majorCtrl.dispose();
     super.dispose();
   }
 
-  bool _isUniversityEmail(String email) {
-    if (!email.contains('@')) return false;
-    final domain = email.split('@').last.toLowerCase();
-    return domain.endsWith('.edu') ||
-        domain.endsWith('.ac.th') ||
-        domain.contains('.ac.') ||
-        domain.contains('.edu.');
-  }
+  bool _isValidEmail(String email) =>
+      email.contains('@') && email.contains('.');
 
   Future<void> _pickAvatar() async {
     final picked = await ImagePicker().pickImage(
@@ -68,8 +58,8 @@ class _SignupScreenState extends State<SignupScreen> {
         name: _nameCtrl.text.trim(),
         email: _emailCtrl.text.trim(),
         avatar: _avatarFile?.path ?? '',
-        university: _universityCtrl.text.trim(),
-        major: _majorCtrl.text.trim(),
+        university: '',
+        major: '',
       ),
     );
     setState(() => _isLoading = false);
@@ -204,18 +194,16 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                // University email
+                // Email
                 _buildField(
                   controller: _emailCtrl,
-                  label: 'University Email',
-                  hint: 'you@university.ac.th',
+                  label: 'Email',
+                  hint: 'you@example.com',
                   icon: Icons.email_outlined,
                   keyboard: TextInputType.emailAddress,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Email is required';
-                    if (!_isUniversityEmail(v.trim())) {
-                      return 'Please use your university email (.edu or .ac.th)';
-                    }
+                    if (!_isValidEmail(v.trim())) return 'Enter a valid email';
                     return null;
                   },
                 ),
@@ -245,37 +233,11 @@ class _SignupScreenState extends State<SignupScreen> {
                   obscure: _obscureConfirm,
                   onToggleObscure: () =>
                       setState(() => _obscureConfirm = !_obscureConfirm),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Please confirm your password';
-                    if (v != _passwordCtrl.text) return 'Passwords do not match';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // University
-                _buildField(
-                  controller: _universityCtrl,
-                  label: 'University',
-                  hint: 'e.g. KMUTT, Chulalongkorn University',
-                  icon: Icons.school_outlined,
-                  capitalization: TextCapitalization.words,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'University is required';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Major
-                _buildField(
-                  controller: _majorCtrl,
-                  label: 'Major / Faculty',
-                  hint: 'e.g. Computer Engineering',
-                  icon: Icons.menu_book_outlined,
-                  capitalization: TextCapitalization.words,
                   action: TextInputAction.done,
                   onSubmitted: (_) => _handleSignUp(),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Major is required';
+                    if (v == null || v.isEmpty) return 'Please confirm your password';
+                    if (v != _passwordCtrl.text) return 'Passwords do not match';
                     return null;
                   },
                 ),
