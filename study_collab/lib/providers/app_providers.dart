@@ -55,11 +55,104 @@ class NotificationsProvider extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   void add(AppNotification n) { _notifications.insert(0, n); notifyListeners(); }
+
   void markAllRead() {
-    _notifications = _notifications.map((n) =>
-      AppNotification(id:n.id,title:n.title,body:n.body,type:n.type,createdAt:n.createdAt,isRead:true)
-    ).toList();
+    _notifications = _notifications.map((n) => AppNotification(
+      id:n.id, title:n.title, body:n.body, type:n.type,
+      createdAt:n.createdAt, isRead:true, targetId:n.targetId,
+    )).toList();
     notifyListeners();
+  }
+
+  void markRead(String id) {
+    final idx = _notifications.indexWhere((n) => n.id == id);
+    if (idx == -1) return;
+    final n = _notifications[idx];
+    _notifications[idx] = AppNotification(
+      id:n.id, title:n.title, body:n.body, type:n.type,
+      createdAt:n.createdAt, isRead:true, targetId:n.targetId,
+    );
+    notifyListeners();
+  }
+
+  void remove(String id) {
+    _notifications.removeWhere((n) => n.id == id);
+    notifyListeners();
+  }
+}
+
+// ── Messaging Provider ────────────────────────
+class MessagingProvider extends ChangeNotifier {
+  final Map<String, List<ChatMessage>> _messages = {};
+  final List<DmConversation> _convos = [];
+
+  List<DmConversation> get conversations => List.unmodifiable(_convos);
+  List<ChatMessage> getMessages(String userId) =>
+      List.unmodifiable(_messages[userId] ?? []);
+
+  void seed() {
+    if (_convos.isNotEmpty) return;
+    final now = DateTime.now();
+    _convos.addAll([
+      DmConversation(userId:'host-2', userName:'Priya Sharma', userAvatar:'',
+        lastMessage:'See you at the session tonight!',
+        lastMessageTime:now.subtract(const Duration(minutes:10)), unreadCount:2),
+      DmConversation(userId:'host-1', userName:'Alex Johnson', userAvatar:'',
+        lastMessage:'Thanks for joining! Let me know if you have questions.',
+        lastMessageTime:now.subtract(const Duration(hours:2)), unreadCount:0),
+      DmConversation(userId:'host-4', userName:'Sara Müller', userAvatar:'',
+        lastMessage:'The chemistry session is confirmed for Friday',
+        lastMessageTime:now.subtract(const Duration(days:1)), unreadCount:1),
+    ]);
+    _messages['host-2'] = [
+      ChatMessage(id:'dm-1',senderId:'host-2',senderName:'Priya Sharma',senderAvatar:'',
+        content:'Hey! Are you coming to the Calculus study group?',
+        sentAt:now.subtract(const Duration(hours:1))),
+      ChatMessage(id:'dm-2',senderId:'me',senderName:'You',senderAvatar:'',
+        content:'Yes! Looking forward to it.',
+        sentAt:now.subtract(const Duration(minutes:50))),
+      ChatMessage(id:'dm-3',senderId:'host-2',senderName:'Priya Sharma',senderAvatar:'',
+        content:'See you at the session tonight!',
+        sentAt:now.subtract(const Duration(minutes:10))),
+    ];
+    _messages['host-1'] = [
+      ChatMessage(id:'dm-4',senderId:'host-1',senderName:'Alex Johnson',senderAvatar:'',
+        content:'Welcome to the CS study group!',
+        sentAt:now.subtract(const Duration(hours:3))),
+      ChatMessage(id:'dm-5',senderId:'me',senderName:'You',senderAvatar:'',
+        content:'Thanks! Excited to join.',
+        sentAt:now.subtract(const Duration(hours:2,minutes:30))),
+      ChatMessage(id:'dm-6',senderId:'host-1',senderName:'Alex Johnson',senderAvatar:'',
+        content:'Thanks for joining! Let me know if you have questions.',
+        sentAt:now.subtract(const Duration(hours:2))),
+    ];
+    _messages['host-4'] = [
+      ChatMessage(id:'dm-7',senderId:'host-4',senderName:'Sara Müller',senderAvatar:'',
+        content:'The chemistry session is confirmed for Friday',
+        sentAt:now.subtract(const Duration(days:1))),
+    ];
+    notifyListeners();
+  }
+
+  void sendMessage(String userId, ChatMessage message) {
+    _messages.putIfAbsent(userId, () => []).add(message);
+    final idx = _convos.indexWhere((c) => c.userId == userId);
+    if (idx != -1) {
+      _convos[idx] = _convos[idx].copyWith(
+        lastMessage: message.content,
+        lastMessageTime: message.sentAt,
+        unreadCount: 0,
+      );
+    }
+    notifyListeners();
+  }
+
+  void markRead(String userId) {
+    final idx = _convos.indexWhere((c) => c.userId == userId);
+    if (idx != -1 && _convos[idx].unreadCount > 0) {
+      _convos[idx] = _convos[idx].copyWith(unreadCount: 0);
+      notifyListeners();
+    }
   }
 }
 

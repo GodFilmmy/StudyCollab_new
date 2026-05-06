@@ -36,7 +36,7 @@ final appRouter = GoRouter(
         GoRoute(path: '/profile',  builder: (c,s) => const ProfileScreen()),
       ],
     ),
-    GoRoute(path: '/create-session', builder: (c,s) => const CreateSessionScreen()),
+    GoRoute(path: '/create-session', builder: (c,s) => CreateSessionScreen(initialDate: s.extra is DateTime ? s.extra as DateTime : null)),
     GoRoute(path: '/session/:id',    builder: (c,s) => SessionDetailScreen(id: s.pathParameters['id']!)),
     GoRoute(path: '/session/:id/edit',    builder: (c,s) => EditSessionScreen(id: s.pathParameters['id']!)),
     GoRoute(path: '/session/:id/members', builder: (c,s) => MembersListScreen(id: s.pathParameters['id']!)),

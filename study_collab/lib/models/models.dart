@@ -77,11 +77,29 @@ class UserProfile {
 class AppNotification {
   final String id, title, body;
   final NotificationType type;
-  
   final DateTime createdAt;
   final bool isRead;
+  final String? targetId;
   const AppNotification({required this.id,required this.title,required this.body,
-    required this.type,required this.createdAt,this.isRead=false});
+    required this.type,required this.createdAt,this.isRead=false,this.targetId});
 }
 
 enum NotificationType { joinRequest, requestApproved, sessionStartingSoon, friendRequest, general }
+
+class DmConversation {
+  final String userId, userName, userAvatar, lastMessage;
+  final DateTime lastMessageTime;
+  final int unreadCount;
+  const DmConversation({
+    required this.userId, required this.userName,
+    required this.userAvatar, required this.lastMessage,
+    required this.lastMessageTime, this.unreadCount = 0,
+  });
+  DmConversation copyWith({String? lastMessage, DateTime? lastMessageTime, int? unreadCount}) =>
+      DmConversation(
+        userId: userId, userName: userName, userAvatar: userAvatar,
+        lastMessage: lastMessage ?? this.lastMessage,
+        lastMessageTime: lastMessageTime ?? this.lastMessageTime,
+        unreadCount: unreadCount ?? this.unreadCount,
+      );
+}

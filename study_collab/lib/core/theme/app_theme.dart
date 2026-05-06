@@ -27,6 +27,88 @@ abstract final class AppColors {
 }
 
 class AppTheme {
+  static ThemeData get dark => ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF1A1A2E),
+        colorScheme: const ColorScheme.dark(
+          primary: AppColors.accent,
+          secondary: Color(0xFF2D2757),
+          error: AppColors.error,
+          surface: Color(0xFF232340),
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          onSurface: Colors.white,
+          outline: Color(0xFF3D3D5C),
+        ),
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).copyWith(
+          displayLarge: GoogleFonts.poppins(
+              fontSize: 40, fontWeight: FontWeight.w700, height: 1.2, color: Colors.white),
+          displayMedium: GoogleFonts.poppins(
+              fontSize: 24, fontWeight: FontWeight.w600, height: 1.35, color: Colors.white),
+          displaySmall: GoogleFonts.poppins(
+              fontSize: 18, fontWeight: FontWeight.w500, height: 1.4, color: Colors.white),
+          titleLarge: GoogleFonts.poppins(
+              fontSize: 16, fontWeight: FontWeight.w600, height: 1.5, color: Colors.white),
+          bodyLarge: GoogleFonts.poppins(
+              fontSize: 16, fontWeight: FontWeight.w400, height: 1.6, color: Colors.white),
+          bodyMedium: GoogleFonts.poppins(
+              fontSize: 14, fontWeight: FontWeight.w400, height: 1.6, color: Colors.white),
+          labelLarge: GoogleFonts.poppins(
+              fontSize: 14, fontWeight: FontWeight.w500, height: 1.4, color: Colors.white),
+          labelSmall: GoogleFonts.poppins(
+              fontSize: 10, fontWeight: FontWeight.w500, height: 1.4,
+              color: const Color(0xFF9999AA)),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.accent,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            disabledBackgroundColor: AppColors.disabled,
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.accent,
+            minimumSize: const Size(double.infinity, 48),
+            side: const BorderSide(color: AppColors.accent),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF2A2A4A),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF3D3D5C))),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF3D3D5C))),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.accent, width: 2)),
+          errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.error)),
+          hintStyle: GoogleFonts.poppins(color: const Color(0xFF888888), fontSize: 14),
+        ),
+        cardTheme: CardThemeData(
+          color: const Color(0xFF232340),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: const BorderSide(color: Color(0xFF3D3D5C))),
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF1A1A2E),
+          elevation: 0,
+          titleTextStyle: GoogleFonts.poppins(
+              fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+      );
+
   static ThemeData get light => ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.background,
