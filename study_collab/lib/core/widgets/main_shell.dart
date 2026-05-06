@@ -1,6 +1,12 @@
+import 'package:badges/badges.dart' as badges;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../theme/app_theme.dart';
+import '../../providers/app_providers.dart';
+
+const _kSelected = Color(0xFF5186CD);
+const _kUnselected = AppColors.hint;
 
 class MainShell extends StatelessWidget {
   final Widget child;
@@ -17,6 +23,8 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sel = _selectedIndex(context);
+    final unread = context.watch<NotificationsProvider>().unreadCount;
+
     return Scaffold(
       body: child,
       floatingActionButton: FloatingActionButton(
@@ -27,10 +35,12 @@ class MainShell extends StatelessWidget {
         shape: const CircleBorder(),
         child: const Icon(Icons.add, size: 28),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         height: 64,
-        color: Colors.white,
+        padding: EdgeInsets.zero,
+        color: AppColors.surface,
         notchMargin: 8,
         shape: const CircularNotchedRectangle(),
         elevation: 8,
@@ -42,6 +52,7 @@ class MainShell extends StatelessWidget {
               activeIcon: Icons.home_rounded,
               label: 'Home',
               active: sel == 0,
+              badge: unread > 0 ? unread : null,
               onTap: () => context.go('/home'),
             ),
             _NavItem(
@@ -78,6 +89,7 @@ class _NavItem extends StatelessWidget {
   final IconData activeIcon;
   final String label;
   final bool active;
+  final int? badge;
   final VoidCallback onTap;
 
   const _NavItem({
@@ -86,10 +98,17 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.badge,
   });
 
   @override
   Widget build(BuildContext context) {
+    final iconWidget = Icon(
+      active ? activeIcon : icon,
+      color: active ? _kSelected : _kUnselected,
+      size: 22,
+    );
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -101,17 +120,30 @@ class _NavItem extends StatelessWidget {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: active ? AppColors.secondary : Colors.transparent,
+                color: active
+                    ? _kSelected.withValues(alpha: 0.12)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
-                active ? activeIcon : icon,
-                color: active ? AppColors.accent : AppColors.hint,
-                size: 22,
-              ),
+              child: badge != null
+                  ? badges.Badge(
+                      badgeContent: Text(
+                        '$badge',
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 8),
+                      ),
+                      badgeStyle: const badges.BadgeStyle(
+                        badgeColor: AppColors.error,
+                        padding: EdgeInsets.all(3),
+                      ),
+                      position: badges.BadgePosition.topEnd(
+                          top: -6, end: -6),
+                      child: iconWidget,
+                    )
+                  : iconWidget,
             ),
             const SizedBox(height: 2),
             Text(
@@ -120,7 +152,7 @@ class _NavItem extends StatelessWidget {
                 fontSize: 10,
                 fontWeight:
                     active ? FontWeight.w600 : FontWeight.w400,
-                color: active ? AppColors.accent : AppColors.hint,
+                color: active ? _kSelected : _kUnselected,
               ),
             ),
           ],

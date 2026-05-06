@@ -4,7 +4,8 @@ import '../../../core/theme/app_theme.dart';
 import '../widgets/session_form.dart';
 
 class CreateSessionScreen extends StatelessWidget {
-  const CreateSessionScreen({super.key});
+  final DateTime? initialDate;
+  const CreateSessionScreen({super.key, this.initialDate});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,7 @@ class CreateSessionScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: const SessionForm(),
+      body: SessionForm(initialDate: initialDate),
     );
   }
 }

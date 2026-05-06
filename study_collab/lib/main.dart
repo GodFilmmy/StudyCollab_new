@@ -19,6 +19,7 @@ class StudyCollabApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => SessionsProvider()),
         ChangeNotifierProvider(create: (_) => NotificationsProvider()),
+        ChangeNotifierProvider(create: (_) => MessagingProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -27,7 +28,7 @@ class StudyCollabApp extends StatelessWidget {
             title: 'Study Collab',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,
-            // darkTheme: AppTheme.dark, // add after building dark theme
+            darkTheme: AppTheme.dark,
             themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
             routerConfig: appRouter,
           );

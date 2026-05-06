@@ -34,9 +34,10 @@ const _kSubjects = [
 
 class SessionForm extends StatefulWidget {
   final StudySession? initialSession;
+  final DateTime? initialDate;
   final VoidCallback? onDelete;
 
-  const SessionForm({super.key, this.initialSession, this.onDelete});
+  const SessionForm({super.key, this.initialSession, this.initialDate, this.onDelete});
 
   bool get isEditing => initialSession != null;
 
@@ -72,7 +73,7 @@ class _SessionFormState extends State<SessionForm> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _date = now.add(const Duration(days: 1));
+    _date = widget.initialDate ?? now.add(const Duration(days: 1));
     _startTime = const TimeOfDay(hour: 14, minute: 0);
     _endTime = const TimeOfDay(hour: 16, minute: 0);
     _prefill();
