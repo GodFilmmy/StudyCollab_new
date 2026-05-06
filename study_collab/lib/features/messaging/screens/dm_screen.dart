@@ -276,23 +276,25 @@ class _ChatBubble extends StatelessWidget {
             : MainAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.secondary,
-              backgroundImage:
-                  message.senderAvatar.isNotEmpty
-                      ? NetworkImage(message.senderAvatar)
-                      : null,
-              child: message.senderAvatar.isEmpty
-                  ? Text(
-                      initial,
-                      style: const TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  : null,
+            GestureDetector(
+              onTap: () => context.push('/user/${message.senderId}'),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColors.secondary,
+                backgroundImage: message.senderAvatar.isNotEmpty
+                    ? NetworkImage(message.senderAvatar)
+                    : null,
+                child: message.senderAvatar.isEmpty
+                    ? Text(
+                        initial,
+                        style: const TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    : null,
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -349,25 +351,108 @@ class _ChatBubble extends StatelessWidget {
 class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
-  const _InputBar(
-      {required this.controller, required this.onSend});
+  const _InputBar({required this.controller, required this.onSend});
+
+  void _showAttachOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                      color: AppColors.secondary, shape: BoxShape.circle),
+                  child: const Icon(Icons.image_outlined,
+                      color: AppColors.accent),
+                ),
+                title: const Text('Send Image'),
+                subtitle: const Text('Share a photo from your gallery'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Image picker coming soon'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                      color: AppColors.secondary, shape: BoxShape.circle),
+                  child: const Icon(Icons.attach_file_rounded,
+                      color: AppColors.accent),
+                ),
+                title: const Text('Send File'),
+                subtitle: const Text('Share a document or PDF'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('File picker coming soon'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        left: 16,
+        left: 8,
         right: 8,
         top: 8,
         bottom: MediaQuery.of(context).padding.bottom + 8,
       ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border:
-            Border(top: BorderSide(color: AppColors.border)),
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
+          // Attachment + button
+          GestureDetector(
+            onTap: () => _showAttachOptions(context),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppColors.secondary,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add, color: AppColors.accent, size: 20),
+            ),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: controller,
@@ -376,25 +461,20 @@ class _InputBar extends StatelessWidget {
               decoration: const InputDecoration(
                 hintText: 'Type a message...',
                 border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(24)),
-                  borderSide:
-                      BorderSide(color: AppColors.border),
+                  borderRadius: BorderRadius.all(Radius.circular(24)),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(24)),
-                  borderSide:
-                      BorderSide(color: AppColors.border),
+                  borderRadius: BorderRadius.all(Radius.circular(24)),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(24)),
-                  borderSide: BorderSide(
-                      color: AppColors.accent, width: 1.5),
+                  borderRadius: BorderRadius.all(Radius.circular(24)),
+                  borderSide:
+                      BorderSide(color: AppColors.accent, width: 1.5),
                 ),
-                contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 10),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 isDense: true,
               ),
             ),

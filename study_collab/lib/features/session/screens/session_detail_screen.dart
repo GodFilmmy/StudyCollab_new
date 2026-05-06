@@ -282,40 +282,48 @@ class _HostCard extends StatelessWidget {
     final initial = session.hostName.isNotEmpty
         ? session.hostName[0].toUpperCase()
         : '?';
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor:
-                session.subjectColor.withValues(alpha: 0.15),
-            backgroundImage: session.hostAvatar.isNotEmpty
-                ? NetworkImage(session.hostAvatar)
-                : null,
-            child: session.hostAvatar.isEmpty
-                ? Text(initial,
-                    style: TextStyle(
-                        color: session.subjectColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600))
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(session.hostName, style: tt.titleLarge),
-              Text('Session Host',
-                  style: tt.bodyMedium?.copyWith(color: AppColors.hint)),
-            ],
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => context.push('/user/${session.hostId}'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor:
+                  session.subjectColor.withValues(alpha: 0.15),
+              backgroundImage: session.hostAvatar.isNotEmpty
+                  ? NetworkImage(session.hostAvatar)
+                  : null,
+              child: session.hostAvatar.isEmpty
+                  ? Text(initial,
+                      style: TextStyle(
+                          color: session.subjectColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600))
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(session.hostName, style: tt.titleLarge),
+                  Text('Session Host',
+                      style:
+                          tt.bodyMedium?.copyWith(color: AppColors.hint)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.hint, size: 20),
+          ],
+        ),
       ),
     );
   }

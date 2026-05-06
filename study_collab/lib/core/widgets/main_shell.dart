@@ -16,14 +16,17 @@ class MainShell extends StatelessWidget {
     final loc = GoRouterState.of(context).uri.toString();
     if (loc.startsWith('/calendar')) return 1;
     if (loc.startsWith('/my-sessions')) return 2;
-    if (loc.startsWith('/profile')) return 3;
+    if (loc.startsWith('/messages') && !loc.contains('/messages/')) return 3;
     return 0;
   }
 
   @override
   Widget build(BuildContext context) {
     final sel = _selectedIndex(context);
-    final unread = context.watch<NotificationsProvider>().unreadCount;
+    final msgUnread = context
+        .watch<MessagingProvider>()
+        .conversations
+        .fold<int>(0, (sum, c) => sum + c.unreadCount);
 
     return Scaffold(
       body: child,
@@ -52,7 +55,6 @@ class MainShell extends StatelessWidget {
               activeIcon: Icons.home_rounded,
               label: 'Home',
               active: sel == 0,
-              badge: unread > 0 ? unread : null,
               onTap: () => context.go('/home'),
             ),
             _NavItem(
@@ -71,11 +73,12 @@ class MainShell extends StatelessWidget {
               onTap: () => context.go('/my-sessions'),
             ),
             _NavItem(
-              icon: Icons.person_outline_rounded,
-              activeIcon: Icons.person_rounded,
-              label: 'Profile',
+              icon: Icons.chat_bubble_outline_rounded,
+              activeIcon: Icons.chat_bubble_rounded,
+              label: 'Messages',
               active: sel == 3,
-              onTap: () => context.go('/profile'),
+              badge: msgUnread > 0 ? msgUnread : null,
+              onTap: () => context.go('/messages'),
             ),
           ],
         ),

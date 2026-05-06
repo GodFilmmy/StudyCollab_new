@@ -14,18 +14,8 @@ class SearchBottomSheet extends StatefulWidget {
 
 class _SearchBottomSheetState extends State<SearchBottomSheet> {
   final _controller = TextEditingController();
-  String _activeFilter = 'All';
-  List<StudySession> _results = [];
-
-  static const _filters = ['All', 'Subject', 'Hostname', '#Hashtag'];
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_results.isEmpty && _controller.text.isEmpty) {
-      _results = context.read<SessionsProvider>().sessions;
-    }
-  }
+  String _query = '';
+  final Set<String> _selectedSubjects = {};
 
   @override
   void dispose() {
@@ -33,82 +23,74 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
     super.dispose();
   }
 
-  void _onTextChanged(String query) {
-    // Smart filter: auto-switch chip based on prefix
-    if (query.startsWith('#') && _activeFilter != '#Hashtag') {
-      setState(() => _activeFilter = '#Hashtag');
-    } else if (query.startsWith('@') && _activeFilter != 'Hostname') {
-      setState(() => _activeFilter = 'Hostname');
-    }
-    _applyFilter(query);
-  }
+  List<StudySession> _filtered(List<StudySession> all) {
+    var list = all;
 
-  void _applyFilter(String query) {
-    final provider = context.read<SessionsProvider>();
-    final q = query.toLowerCase();
-
-    List<StudySession> results;
-    switch (_activeFilter) {
-      case 'Subject':
-        results = q.isEmpty
-            ? provider.sessions
-            : provider.sessions
-                .where((s) => s.subject.toLowerCase().contains(q))
-                .toList();
-        break;
-      case 'Hostname':
-        final hostQ = q.startsWith('@') ? q.substring(1) : q;
-        results = hostQ.isEmpty
-            ? provider.sessions
-            : provider.sessions
-                .where((s) => s.hostName.toLowerCase().contains(hostQ))
-                .toList();
-        break;
-      case '#Hashtag':
-        final tagQ = q.startsWith('#') ? q.substring(1) : q;
-        results = tagQ.isEmpty
-            ? provider.sessions
-            : provider.sessions
-                .where((s) =>
-                    s.hashtags.any((h) => h.toLowerCase().contains(tagQ)))
-                .toList();
-        break;
-      default:
-        results = provider.search(query);
+    // Subject filter (multi-select — any selected subject matches)
+    if (_selectedSubjects.isNotEmpty) {
+      list = list.where((s) => _selectedSubjects.contains(s.subject)).toList();
     }
 
-    setState(() => _results = results);
-  }
-
-  void _setFilter(String filter) {
-    setState(() => _activeFilter = filter);
-
-    // Insert prefix character when switching to special filter modes
-    if (filter == '#Hashtag' && !_controller.text.startsWith('#')) {
-      _controller.text = '#';
-      _controller.selection =
-          TextSelection.fromPosition(const TextPosition(offset: 1));
-    } else if (filter == 'Hostname' && !_controller.text.startsWith('@')) {
-      _controller.text = '@';
-      _controller.selection =
-          TextSelection.fromPosition(const TextPosition(offset: 1));
-    } else if ((filter == 'All' || filter == 'Subject') &&
-        (_controller.text.startsWith('#') || _controller.text.startsWith('@'))) {
-      _controller.clear();
+    // Text search across title, description, hashtags, host
+    final q = _query.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      if (q.startsWith('#')) {
+        final tag = q.substring(1);
+        list = list
+            .where((s) =>
+                s.hashtags.any((h) => h.toLowerCase().contains(tag)))
+            .toList();
+      } else if (q.startsWith('@')) {
+        final host = q.substring(1);
+        list = list
+            .where((s) => s.hostName.toLowerCase().contains(host))
+            .toList();
+      } else {
+        list = list
+            .where((s) =>
+                s.title.toLowerCase().contains(q) ||
+                s.subject.toLowerCase().contains(q) ||
+                (s.description?.toLowerCase().contains(q) ?? false) ||
+                s.hostName.toLowerCase().contains(q) ||
+                s.hashtags.any((h) => h.toLowerCase().contains(q)))
+            .toList();
+      }
     }
 
-    _applyFilter(_controller.text);
+    return list;
   }
+
+  void _toggleSubject(String subject) {
+    setState(() {
+      if (_selectedSubjects.contains(subject)) {
+        _selectedSubjects.remove(subject);
+      } else {
+        _selectedSubjects.add(subject);
+      }
+    });
+  }
+
+  void _clearSubjects() => setState(() => _selectedSubjects.clear());
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final allSessions = context.watch<SessionsProvider>().sessions;
+
+    // Derive sorted unique subjects from all sessions
+    final subjects = allSessions.map((s) => s.subject).toSet().toList()
+      ..sort();
+
+    final results = _filtered(allSessions);
+    final hasActiveFilters =
+        _selectedSubjects.isNotEmpty || _query.trim().isNotEmpty;
+
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
+          maxHeight: MediaQuery.of(context).size.height * 0.92,
         ),
         decoration: const BoxDecoration(
           color: AppColors.surface,
@@ -117,7 +99,7 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
+            // Handle
             Center(
               child: Container(
                 margin: const EdgeInsets.only(top: 12, bottom: 4),
@@ -129,13 +111,24 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
                 ),
               ),
             ),
-            // Header row
+            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 8, 0),
               child: Row(
                 children: [
                   Text('Search Sessions', style: tt.displaySmall),
                   const Spacer(),
+                  if (hasActiveFilters)
+                    TextButton(
+                      onPressed: () {
+                        _clearSubjects();
+                        _controller.clear();
+                        setState(() => _query = '');
+                      },
+                      child: const Text('Clear all',
+                          style: TextStyle(
+                              color: AppColors.accent, fontSize: 13)),
+                    ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close, size: 20),
@@ -146,61 +139,91 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
             ),
             // Search input
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: TextField(
                 controller: _controller,
                 autofocus: true,
-                onChanged: _onTextChanged,
+                onChanged: (v) => setState(() => _query = v),
                 decoration: const InputDecoration(
                   hintText: 'Search by title, #hashtag, @host...',
                   prefixIcon: Icon(Icons.search, size: 20),
                 ),
               ),
             ),
-            // Filter chips
-            SizedBox(
-              height: 42,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _filters.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, i) {
-                  final f = _filters[i];
-                  final isActive = f == _activeFilter;
-                  return FilterChip(
-                    label: Text(f),
-                    selected: isActive,
-                    onSelected: (_) => _setFilter(f),
-                    selectedColor: AppColors.secondary,
-                    checkmarkColor: AppColors.accent,
-                    labelStyle: TextStyle(
-                      color: isActive ? AppColors.accent : AppColors.hint,
-                      fontWeight:
-                          isActive ? FontWeight.w600 : FontWeight.w400,
-                      fontSize: 13,
+            // Subject filter buttons
+            if (subjects.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                child: Row(
+                  children: [
+                    Text(
+                      'Filter by subject',
+                      style: tt.labelSmall?.copyWith(
+                          color: AppColors.hint,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4),
                     ),
-                    side: BorderSide(
-                      color: isActive ? AppColors.accent : AppColors.border,
-                    ),
-                    backgroundColor: AppColors.surface,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    visualDensity: VisualDensity.compact,
-                  );
-                },
+                    if (_selectedSubjects.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _clearSubjects,
+                        child: Text(
+                          'Clear (${_selectedSubjects.length})',
+                          style: const TextStyle(
+                              color: AppColors.accent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: subjects.map((subject) {
+                    final isSelected = _selectedSubjects.contains(subject);
+                    final color = allSessions
+                        .firstWhere((s) => s.subject == subject)
+                        .subjectColor;
+                    return _SubjectChip(
+                      label: subject,
+                      color: color,
+                      selected: isSelected,
+                      onTap: () => _toggleSubject(subject),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             const Divider(height: 1, color: AppColors.border),
+            // Result count label
+            if (hasActiveFilters)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: Row(
+                  children: [
+                    Text(
+                      '${results.length} result${results.length != 1 ? 's' : ''}',
+                      style: tt.labelSmall?.copyWith(color: AppColors.hint),
+                    ),
+                  ],
+                ),
+              ),
             // Results
             Flexible(
-              child: _results.isEmpty
-                  ? _NoResults(query: _controller.text)
+              child: results.isEmpty
+                  ? _NoResults(query: _query)
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: _results.length,
-                      itemBuilder: (context, i) =>
-                          SessionCard(session: _results[i]),
+                      itemCount: results.length,
+                      itemBuilder: (_, i) =>
+                          SessionCard(session: results[i]),
                     ),
             ),
           ],
@@ -209,6 +232,61 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
     );
   }
 }
+
+// ── Subject chip ──────────────────────────────────────────────────────────────
+
+class _SubjectChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+  const _SubjectChip({
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? color : color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? color : color.withValues(alpha: 0.35),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              Icon(Icons.check_rounded,
+                  size: 13, color: Colors.white),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : color,
+                fontSize: 12,
+                fontWeight:
+                    selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── No results ────────────────────────────────────────────────────────────────
 
 class _NoResults extends StatelessWidget {
   final String query;
@@ -223,7 +301,8 @@ class _NoResults extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search_off_rounded, size: 56, color: AppColors.disabled),
+            const Icon(Icons.search_off_rounded,
+                size: 56, color: AppColors.disabled),
             const SizedBox(height: 16),
             Text(
               query.isEmpty ? 'Start typing to search' : 'No sessions found',
@@ -232,7 +311,7 @@ class _NoResults extends StatelessWidget {
             if (query.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
-                'Try a different keyword or filter',
+                'Try a different keyword or subject',
                 style: tt.bodyMedium?.copyWith(color: AppColors.hint),
                 textAlign: TextAlign.center,
               ),

@@ -178,9 +178,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final auth = context.watch<AuthProvider>();
-    final sessions = context.watch<SessionsProvider>().sessions;
+    final allSessions = context.watch<SessionsProvider>().sessions;
     final unreadCount = context.watch<NotificationsProvider>().unreadCount;
     final firstName = auth.currentUser?.name.split(' ').first ?? 'Student';
+    final avatarUrl = auth.currentUser?.avatar ?? '';
+
+    final discoverSessions = allSessions
+        .where((s) => s.myStatus == JoinStatus.notJoined)
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -191,10 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '${_greeting()}, $firstName 👋',
-              style: tt.displaySmall,
-            ),
+            Text('${_greeting()}, $firstName 👋', style: tt.displaySmall),
             Text(
               'Find your next study session',
               style: tt.bodyMedium?.copyWith(color: AppColors.hint),
@@ -202,6 +204,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
+          // Profile avatar — left of notification bell
+          GestureDetector(
+            onTap: () => context.push('/profile'),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: CircleAvatar(
+                radius: 17,
+                backgroundColor: AppColors.secondary,
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl.isEmpty
+                    ? Text(
+                        firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          // Notification bell
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: badges.Badge(
@@ -225,9 +252,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Column(
         children: [
-          // Search bar trigger
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: GestureDetector(
               onTap: _openSearch,
               child: Container(
@@ -244,27 +270,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Search sessions, #hashtags, @hosts...',
-                      style:
-                          tt.bodyMedium?.copyWith(color: AppColors.hint),
+                      style: tt.bodyMedium?.copyWith(color: AppColors.hint),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          // Session list
           Expanded(
             child: RefreshIndicator(
               onRefresh: _onRefresh,
               color: AppColors.accent,
-              child: sessions.isEmpty
+              child: discoverSessions.isEmpty
                   ? const _EmptyState()
                   : ListView.builder(
-                      padding:
-                          const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                      itemCount: sessions.length,
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      itemCount: discoverSessions.length,
                       itemBuilder: (context, index) =>
-                          SessionCard(session: sessions[index]),
+                          SessionCard(session: discoverSessions[index]),
                     ),
             ),
           ),
@@ -283,7 +306,6 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     return ListView(
-      // ListView enables pull-to-refresh even on empty state
       children: [
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.55,
@@ -297,20 +319,14 @@ class _EmptyState extends StatelessWidget {
                   color: AppColors.secondary,
                   borderRadius: BorderRadius.circular(50),
                 ),
-                child: const Icon(
-                  Icons.menu_book_outlined,
-                  size: 48,
-                  color: AppColors.accent,
-                ),
+                child: const Icon(Icons.explore_outlined,
+                    size: 48, color: AppColors.accent),
               ),
               const SizedBox(height: 20),
-              Text(
-                'No sessions yet',
-                style: tt.displaySmall,
-              ),
+              Text('All caught up!', style: tt.displaySmall),
               const SizedBox(height: 8),
               Text(
-                'Be the first to create a study session\nand start collaborating!',
+                "You've joined all available sessions.\nCreate one or check back later!",
                 style: tt.bodyMedium?.copyWith(color: AppColors.hint),
                 textAlign: TextAlign.center,
               ),
